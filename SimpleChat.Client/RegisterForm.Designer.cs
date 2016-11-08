@@ -32,6 +32,7 @@
             System.Windows.Forms.Label label2;
             System.Windows.Forms.Label label1;
             System.Windows.Forms.GroupBox groupBox1;
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RegisterForm));
             this.txtLogin = new System.Windows.Forms.TextBox();
             this.txtPassword = new System.Windows.Forms.TextBox();
             this.txtUserName = new System.Windows.Forms.TextBox();
@@ -91,26 +92,28 @@
             // txtLogin
             // 
             this.txtLogin.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.txtLogin.Location = new System.Drawing.Point(73, 48);
+            this.txtLogin.Location = new System.Drawing.Point(53, 48);
+            this.txtLogin.MaxLength = 10;
             this.txtLogin.Name = "txtLogin";
-            this.txtLogin.Size = new System.Drawing.Size(150, 22);
+            this.txtLogin.Size = new System.Drawing.Size(170, 22);
             this.txtLogin.TabIndex = 2;
             // 
             // txtPassword
             // 
             this.txtPassword.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.txtPassword.Location = new System.Drawing.Point(73, 76);
+            this.txtPassword.Location = new System.Drawing.Point(53, 76);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.PasswordChar = '*';
-            this.txtPassword.Size = new System.Drawing.Size(150, 22);
+            this.txtPassword.Size = new System.Drawing.Size(170, 22);
             this.txtPassword.TabIndex = 3;
             // 
             // txtUserName
             // 
             this.txtUserName.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.txtUserName.Location = new System.Drawing.Point(73, 20);
+            this.txtUserName.Location = new System.Drawing.Point(53, 19);
+            this.txtUserName.MaxLength = 15;
             this.txtUserName.Name = "txtUserName";
-            this.txtUserName.Size = new System.Drawing.Size(150, 22);
+            this.txtUserName.Size = new System.Drawing.Size(170, 22);
             this.txtUserName.TabIndex = 0;
             // 
             // btnRegister
@@ -134,6 +137,7 @@
             this.ClientSize = new System.Drawing.Size(254, 165);
             this.Controls.Add(groupBox1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "RegisterForm";

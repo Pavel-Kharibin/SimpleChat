@@ -31,9 +31,10 @@
             System.Windows.Forms.Label label1;
             System.Windows.Forms.Label label2;
             System.Windows.Forms.GroupBox groupBox1;
-            this.txtLogin = new System.Windows.Forms.TextBox();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LoginForm));
             this.txtPassword = new System.Windows.Forms.TextBox();
             this.btnLogin = new System.Windows.Forms.Button();
+            this.txtLogin = new System.Windows.Forms.TextBox();
             label1 = new System.Windows.Forms.Label();
             label2 = new System.Windows.Forms.Label();
             groupBox1 = new System.Windows.Forms.GroupBox();
@@ -58,13 +59,18 @@
             label2.TabIndex = 1;
             label2.Text = "Пароль";
             // 
-            // txtLogin
+            // groupBox1
             // 
-            this.txtLogin.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.txtLogin.Location = new System.Drawing.Point(50, 13);
-            this.txtLogin.Name = "txtLogin";
-            this.txtLogin.Size = new System.Drawing.Size(171, 22);
-            this.txtLogin.TabIndex = 1;
+            groupBox1.Controls.Add(this.txtPassword);
+            groupBox1.Controls.Add(this.btnLogin);
+            groupBox1.Controls.Add(this.txtLogin);
+            groupBox1.Controls.Add(label2);
+            groupBox1.Controls.Add(label1);
+            groupBox1.Location = new System.Drawing.Point(12, 12);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Size = new System.Drawing.Size(232, 101);
+            groupBox1.TabIndex = 6;
+            groupBox1.TabStop = false;
             // 
             // txtPassword
             // 
@@ -72,7 +78,7 @@
             this.txtPassword.Location = new System.Drawing.Point(50, 41);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.PasswordChar = '*';
-            this.txtPassword.Size = new System.Drawing.Size(171, 22);
+            this.txtPassword.Size = new System.Drawing.Size(170, 22);
             this.txtPassword.TabIndex = 2;
             // 
             // btnLogin
@@ -87,18 +93,14 @@
             this.btnLogin.UseVisualStyleBackColor = true;
             this.btnLogin.Click += new System.EventHandler(this.btnLogin_Click);
             // 
-            // groupBox1
+            // txtLogin
             // 
-            groupBox1.Controls.Add(this.txtPassword);
-            groupBox1.Controls.Add(this.btnLogin);
-            groupBox1.Controls.Add(this.txtLogin);
-            groupBox1.Controls.Add(label2);
-            groupBox1.Controls.Add(label1);
-            groupBox1.Location = new System.Drawing.Point(12, 12);
-            groupBox1.Name = "groupBox1";
-            groupBox1.Size = new System.Drawing.Size(232, 101);
-            groupBox1.TabIndex = 6;
-            groupBox1.TabStop = false;
+            this.txtLogin.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.txtLogin.Location = new System.Drawing.Point(50, 13);
+            this.txtLogin.MaxLength = 10;
+            this.txtLogin.Name = "txtLogin";
+            this.txtLogin.Size = new System.Drawing.Size(170, 22);
+            this.txtLogin.TabIndex = 1;
             // 
             // LoginForm
             // 
@@ -108,6 +110,7 @@
             this.ClientSize = new System.Drawing.Size(254, 122);
             this.Controls.Add(groupBox1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "LoginForm";

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.ServiceModel;
 using System.Windows.Forms;
+using mshtml;
 using SimpleChat.Core;
 using SimpleChat.Core.Contracts;
 using SimpleChat.Core.Enums;
@@ -13,6 +15,11 @@ namespace SimpleChat.Client
     public partial class MainForm : Form
     {
         private const string APP_NAME = "SimpleChat";
+
+        private const string CHAT_DOCUMENT = "<!DOCTYPE html><html><head>" +
+                                             "<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>" +
+                                             "</head><body></body></html>";
+
         private readonly List<User> _onlineUsers = new List<User>();
         private readonly IServerService _server;
         private User _user;
@@ -20,6 +27,14 @@ namespace SimpleChat.Client
         public MainForm()
         {
             InitializeComponent();
+
+            webBrowser.DocumentCompleted += (sender, args) =>
+            {
+                var path = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "chat.css");
+                var doc = (webBrowser.Document.DomDocument) as IHTMLDocument2;
+                var styleSheet = doc.createStyleSheet("", 0);
+                styleSheet.cssText = File.ReadAllText(path);
+            };
 
             var clientCallback = new ClientCallback();
             clientCallback.OnLogoutCommand += (sender, args) =>
@@ -47,7 +62,9 @@ namespace SimpleChat.Client
 
         private void ResetForm()
         {
-            txtMessages.Clear();
+            Text = APP_NAME;
+
+            webBrowser.Document.Body.InnerHtml = "";
 
             panel.Enabled = false;
             mainMenu_Chat_Login.Enabled = true;
@@ -61,6 +78,8 @@ namespace SimpleChat.Client
         private async void Init(User user)
         {
             _user = user;
+
+            Text = $"{APP_NAME} - {_user.Name}";
 
             panel.Enabled = true;
             mainMenu_Chat_Login.Enabled = false;
@@ -78,15 +97,29 @@ namespace SimpleChat.Client
 
         private void ShowMessage(ChatMessage message)
         {
+            var placeholder = webBrowser.Document.CreateElement("section");
             if (!message.Id.Equals(Guid.Empty))
             {
-                txtMessages.Text +=
-                    $"{(message.UserId == _user.Id ? "Вы" : message.User?.Name)} ({message.Sent}): {message.Message}\r\n";
+                if (webBrowser.Document != null)
+                {
+                    placeholder.SetAttribute("data-id", message.Id.ToString());
+                    placeholder.InnerHtml =
+                        $"<div class='message'><span class='sender'>{(message.UserId == _user.Id ? "Вы" : message.User?.Name)}</span> <span class='time'>{message.Sent}</span><br/><span class='message-content'>{message.Message}</span></div>";
+                }
             }
             else
             {
-                txtMessages.Text += $"({message.Sent}): {message.Message}\r\n";
+                placeholder.InnerHtml += $"<div class='system-message'><span class='time'>{message.Sent}</span> {message.Message}</div>";
             }
+
+            webBrowser.Document.Body.AppendChild(placeholder);
+
+            RemoveOldMessages();
+        }
+
+        private void RemoveOldMessages()
+        {
+            if (_user.IsAdmin) return;
         }
 
         private void ShowMessage(string message)
@@ -117,6 +150,11 @@ namespace SimpleChat.Client
         private void ShowMessageBox(string message, MessageBoxIcon icon = MessageBoxIcon.Information)
         {
             MessageBox.Show(this, message, APP_NAME, MessageBoxButtons.OK, icon);
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            webBrowser.DocumentText = CHAT_DOCUMENT;
         }
 
         private void mainMenu_Chat_Login_Click(object sender, EventArgs e)
