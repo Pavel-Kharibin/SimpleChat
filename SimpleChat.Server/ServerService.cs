@@ -25,7 +25,7 @@ namespace SimapleChat.Server
 
         public async Task<LoginOperationResult> LoginAsync(string login, string password)
         {
-            var clientCallBack = OperationContext.Current.GetCallbackChannel<IClientCallback>();
+            var clientCallback = OperationContext.Current.GetCallbackChannel<IClientCallback>();
 
             if (_clients.Keys.Any(k => string.Equals(k, login, StringComparison.InvariantCultureIgnoreCase)))
             {
@@ -47,30 +47,7 @@ namespace SimapleChat.Server
                     Message = "Не верный логин или пароль."
                 };
 
-            var newClientConnection = new ClientConnection
-            {
-                Callback = clientCallBack,
-                User = user
-            };
-
-            if (_clients.TryAdd(login, newClientConnection))
-            {
-                foreach (var conn in _clients.Where(c => c.Value != newClientConnection))
-                {
-                    conn.Value.Callback.UserLoggedIn(newClientConnection.User);
-                }
-
-                return new LoginOperationResult
-                {
-                    User = newClientConnection.User
-                };
-            }
-
-            return new LoginOperationResult
-            {
-                OperationResult = OperationResult.Failure,
-                Message = "Не удалось зврегистрировать клиентское соединение."
-            };
+            return Login(user, clientCallback);
         }
 
         public void Logout()
@@ -92,19 +69,21 @@ namespace SimapleChat.Server
 
         public async void LogoutUserAsync(int userId)
         {
+            var callback = OperationContext.Current.GetCallbackChannel<IClientCallback>();
+
             var taskFactory = new TaskFactory();
             await taskFactory.StartNew(() =>
             {
                 if (_clients.All(c => c.Value.User.Id != userId)) return;
 
-                //var callback = OperationContext.Current.GetCallbackChannel<IClientCallback>();
+                
                 var clientInfo = _clients.First(c => c.Value.User.Id == userId);
 
                 ClientConnection clientConnection;
                 if (_clients.TryRemove(clientInfo.Value.User.Login, out clientConnection))
                 {
                     foreach (
-                        var conn in _clients.Where(c => c.Value != clientConnection))//  && c.Value.Callback != callback
+                        var conn in _clients.Where(c => c.Value != clientConnection && c.Value.Callback != callback))//  
                     {
                         conn.Value.Callback.UserLoggedOut(clientConnection.User);
                     }
@@ -112,6 +91,25 @@ namespace SimapleChat.Server
 
                 clientInfo.Value.Callback.DoLogout("Администратор выгнал вас из чата.");
             });
+        }
+
+        public async Task<LoginOperationResult> RegisterAsync(string userName, string login, string password)
+        {
+            var clientCallback = OperationContext.Current.GetCallbackChannel<IClientCallback>();
+
+            var loginExists = await _usersRepository.CheckLoginExists(login);
+            if (loginExists)
+            {
+                return new LoginOperationResult
+                {
+                    OperationResult = OperationResult.Failure,
+                    Message = $"Логин {login} уже зарегистрирован."
+                };
+            }
+
+            var user = await _usersRepository.RegisterAsync(userName, login, password);
+
+            return Login(user, clientCallback);
         }
 
         public async Task<LoadMessagesOperationResult> LoadMessagesAsync(int? top = null)
@@ -131,11 +129,9 @@ namespace SimapleChat.Server
                 await _chatMessagesRepository.AddMessageAsync(message);
             }
 
-            foreach (
-                var clientConnection in
-                    _clients.Where(clientConnection => clientConnection.Value.User.Id != message.UserId))
+            foreach (var clientInfo in _clients.Where(c => c.Value.User.Id != message.UserId))
             {
-                clientConnection.Value.Callback.SetMessage(message);
+                clientInfo.Value.Callback.SetMessage(message);
             }
 
             return new SendMessageOperationResult();
@@ -146,6 +142,34 @@ namespace SimapleChat.Server
             var users = _clients.Select(c => c.Value.User).ToList();
 
             return users;
+        }
+
+        private LoginOperationResult Login(User user, IClientCallback clientCallback)
+        {
+            var newClientConnection = new ClientConnection
+            {
+                Callback = clientCallback,
+                User = user
+            };
+
+            if (_clients.TryAdd(user.Login, newClientConnection))
+            {
+                foreach (var conn in _clients.Where(c => c.Value != newClientConnection))
+                {
+                    conn.Value.Callback.UserLoggedIn(newClientConnection.User);
+                }
+
+                return new LoginOperationResult
+                {
+                    User = newClientConnection.User
+                };
+            }
+
+            return new LoginOperationResult
+            {
+                OperationResult = OperationResult.Failure,
+                Message = "Не удалось зврегистрировать клиентское соединение."
+            };
         }
     }
 }

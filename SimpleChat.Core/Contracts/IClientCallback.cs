@@ -1,13 +1,14 @@
-﻿using System.ServiceModel;
+﻿using System;
+using System.ServiceModel;
 using SimpleChat.Core.Models;
 
 namespace SimpleChat.Core.Contracts
 {
     public interface IClientCallback
     {
-        event OnLogoutCommandDelegate OnLogoutCommand;
-        event OnNewMessageDelegate OnMessage;
-        event OnUserStatusChangedDelegate OnUserStatusChanged;
+        event EventHandler<OnLogoutCommandEventArgs> OnLogoutCommand;
+        event EventHandler<OnNewMessageEventArgs> OnMessage;
+        event EventHandler<OnUserStatusChangesEventArgs> OnUserStatusChanged;
 
         [OperationContract]
         void DoLogout(string message);
@@ -20,5 +21,22 @@ namespace SimpleChat.Core.Contracts
 
         [OperationContract]
         void UserLoggedOut(User user);
+    }
+
+
+    public class OnLogoutCommandEventArgs
+    {
+        public string Message { get; set; }
+    }
+
+    public class OnNewMessageEventArgs
+    {
+        public ChatMessage Message { get; set; }
+    }
+
+    public class OnUserStatusChangesEventArgs
+    {
+        public User User { get; set; }
+        public bool IsOnline { get; set; }
     }
 }

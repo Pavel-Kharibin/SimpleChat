@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.Entity;
 using System.IO;
 using System.Linq;
@@ -25,7 +24,22 @@ namespace SimpleChat.Data.Repository
 
         public async Task<bool> CheckLoginExists(string login)
         {
-            return await DbSet.AnyAsync(u => string.Equals(u.Login, login, StringComparison.InvariantCultureIgnoreCase));
+            return await DbSet.AnyAsync(u => u.Login == login);
+        }
+
+        public async Task<User> RegisterAsync(string userName, string login, string password)
+        {
+            var user = new User
+            {
+                Name = userName,
+                Login = login,
+                Password = HashPassword(password)
+            };
+
+            DbSet.Add(user);
+            await DbContext.SaveChangesAsync();
+
+            return user;
         }
 
         public async Task<IEnumerable<User>> GetAllAsync()
@@ -37,7 +51,8 @@ namespace SimpleChat.Data.Repository
         {
             var md5 = MD5.Create();
 
-            return string.Join("", md5.ComputeHash(new MemoryStream(Encoding.Unicode.GetBytes(password))).Select(x => x.ToString("x2")));
+            return string.Join("",
+                md5.ComputeHash(new MemoryStream(Encoding.Unicode.GetBytes(password))).Select(x => x.ToString("x2")));
         }
     }
 }

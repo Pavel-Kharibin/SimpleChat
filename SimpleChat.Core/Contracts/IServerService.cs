@@ -6,7 +6,7 @@ using SimpleChat.Core.OperationResults;
 
 namespace SimpleChat.Core.Contracts
 {
-    [ServiceContract(CallbackContract = typeof(IClientCallback))]
+    [ServiceContract(CallbackContract = typeof (IClientCallback))]
     public interface IServerService
     {
         [OperationContract]
@@ -19,8 +19,11 @@ namespace SimpleChat.Core.Contracts
         void LogoutUserAsync(int userId);
 
         [OperationContract]
+        Task<LoginOperationResult> RegisterAsync(string userName, string login, string password);
+
+        [OperationContract]
         Task<LoadMessagesOperationResult> LoadMessagesAsync(int? top = null);
-            
+
         [OperationContract]
         Task<SendMessageOperationResult> SendMessageAsync(ChatMessage message, bool save = true);
 

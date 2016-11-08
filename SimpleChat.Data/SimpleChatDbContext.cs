@@ -7,7 +7,7 @@ namespace SimpleChat.Data
     {
         public SimpleChatDbContext() : base("Default")
         {
-            
+            Database.SetInitializer<SimpleChatDbContext>(null);
         }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)

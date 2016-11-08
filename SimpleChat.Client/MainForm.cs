@@ -12,10 +12,10 @@ namespace SimpleChat.Client
 {
     public partial class MainForm : Form
     {
+        private const string APP_NAME = "SimpleChat";
         private readonly List<User> _onlineUsers = new List<User>();
         private readonly IServerService _server;
         private User _user;
-        private const string APP_NAME = "SimpleChat";
 
         public MainForm()
         {
@@ -32,9 +32,9 @@ namespace SimpleChat.Client
             {
                 var message = new ChatMessage
                 {
-                    Message = args.IsOnline 
-                    ? $"Пользователь {args.User.Name} присоеденился к чату." 
-                    : $"Пользователь {args.User.Name} покинул чат."
+                    Message = args.IsOnline
+                        ? $"Пользователь {args.User.Name} присоеденился к чату."
+                        : $"Пользователь {args.User.Name} покинул чат."
                 };
                 ShowMessage(message);
 
@@ -58,11 +58,22 @@ namespace SimpleChat.Client
             _onlineUsers.Clear();
         }
 
-        private void Init()
+        private async void Init(User user)
         {
+            _user = user;
+
             panel.Enabled = true;
             mainMenu_Chat_Login.Enabled = false;
             mainMenu_Chat_Register.Enabled = false;
+
+            var messagesResult = await _server.LoadMessagesAsync(_user.IsAdmin ? (int?) null : 10);
+            foreach (var message in messagesResult.Messages)
+            {
+                ShowMessage(message);
+            }
+
+            var onlineUsers = _server.GetOnlineUsers().ToList();
+            onlineUsers.ForEach(u => UpdateUsersList(u, true));
         }
 
         private void ShowMessage(ChatMessage message)
@@ -70,11 +81,11 @@ namespace SimpleChat.Client
             if (!message.Id.Equals(Guid.Empty))
             {
                 txtMessages.Text +=
-                    $"{(message.UserId == _user.Id ? "Вы" : message.User?.Name)} [{message.Sent}]: {message.Message}\r\n";
+                    $"{(message.UserId == _user.Id ? "Вы" : message.User?.Name)} ({message.Sent}): {message.Message}\r\n";
             }
             else
             {
-                txtMessages.Text += $"[{message.Sent}]: {message.Message}\r\n";
+                txtMessages.Text += $"({message.Sent}): {message.Message}\r\n";
             }
         }
 
@@ -108,44 +119,84 @@ namespace SimpleChat.Client
             MessageBox.Show(this, message, APP_NAME, MessageBoxButtons.OK, icon);
         }
 
-        private async void mainMenu_Chat_Login_Click(object sender, EventArgs e)
+        private void mainMenu_Chat_Login_Click(object sender, EventArgs e)
         {
             var loginForm = new LoginForm();
-            if (loginForm.ShowDialog(this) != DialogResult.OK) return;
 
-            var progress = new ProgressForm("Выполняется вход в чат...");
-            progress.Show(this);
-
-            var result = await _server.LoginAsync(loginForm.Login, loginForm.Password);
-
-            progress.Close();
-
-            if (result.OperationResult == OperationResult.Success)
+            loginForm.OnTryLogon += async (o, args) =>
             {
-                _user = result.User;
+                loginForm.Enabled = false;
 
-                loginForm.Close();
+                var progress = new ProgressForm("Выполняется вход в чат...");
+                progress.ShowCenterParent(loginForm);
 
-                var messagesResult = await _server.LoadMessagesAsync(_user.IsAdmin ? (int?) null : 10);
-                foreach (var message in messagesResult.Messages)
+                var result = await _server.LoginAsync(loginForm.Login, loginForm.Password);
+
+                progress.Close();
+
+                if (result.OperationResult == OperationResult.Success)
                 {
-                    ShowMessage(message);
+                    loginForm.Close();
+                    Init(result.User);
                 }
+                else
+                {
+                    loginForm.Enabled = true;
 
-                var onlineUsers = _server.GetOnlineUsers().ToList();
-                onlineUsers.ForEach(u => UpdateUsersList(u, true));
+                    ShowMessageBox(result.Message, MessageBoxIcon.Exclamation);
+                }
+            };
 
-                Init();
-            }
-            else
+            loginForm.ShowCenterParent(this);
+        }
+
+        private void mainMenu_Chat_Register_Click(object sender, EventArgs e)
+        {
+            var registerForm = new RegisterForm();
+
+            registerForm.OnTryRegister += async (o, args) =>
             {
-                ShowMessageBox(result.Message);
-            }
+                registerForm.Enabled = false;
+
+                var progressForm = new ProgressForm("Выполняется регистрация");
+                progressForm.ShowCenterParent(registerForm);
+
+                var result = await _server.RegisterAsync(args.UserName, args.Login, args.Password);
+
+                progressForm.Close();
+
+                if (result.OperationResult == OperationResult.Success)
+                {
+                    registerForm.Close();
+                    Init(result.User);
+                }
+                else
+                {
+                    registerForm.Enabled = true;
+
+                    ShowMessageBox(result.Message, MessageBoxIcon.Exclamation);
+                }
+            };
+
+            registerForm.ShowCenterParent(this);
         }
 
         private void mainMenu_Chat_Exit_Click(object sender, EventArgs e)
         {
             Close();
+        }
+
+        private void contextMenu_Logout_Click(object sender, EventArgs e)
+        {
+            var selectedIdx = lstUsers.SelectedIndex;
+            if (selectedIdx == -1) return;
+
+            var user = _onlineUsers[selectedIdx];
+
+            _server.LogoutUserAsync(user.Id);
+
+            UpdateUsersList(user, false);
+            ShowMessage($"Вы выгнали пользователя {user.Name} из чата.");
         }
 
         private async void btnSend_Click(object sender, EventArgs e)
@@ -199,18 +250,6 @@ namespace SimpleChat.Client
             if (user.Id == _user.Id) return;
             contextMenu.Show(lstUsers, e.Location);
             lstUsers.SelectedIndex = selectedIdx;
-        }
-
-        private void contextMenu_Logout_Click(object sender, EventArgs e)
-        {
-            var selectedIdx = lstUsers.SelectedIndex;
-            if (selectedIdx == -1) return;
-
-            var user = _onlineUsers[selectedIdx];
-
-            _server.LogoutUserAsync(user.Id);
-
-            ShowMessage($"Вы выгнали пользователя {user.Name} из чата.");
         }
     }
 }

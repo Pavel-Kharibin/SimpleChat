@@ -141,6 +141,7 @@
             this.mainMenu_Chat_Register.Name = "mainMenu_Chat_Register";
             this.mainMenu_Chat_Register.Size = new System.Drawing.Size(143, 22);
             this.mainMenu_Chat_Register.Text = "&Регистрация";
+            this.mainMenu_Chat_Register.Click += new System.EventHandler(this.mainMenu_Chat_Register_Click);
             // 
             // toolStripSeparator1
             // 

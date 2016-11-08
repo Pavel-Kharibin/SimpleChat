@@ -13,7 +13,7 @@ namespace SimpleChat.Data.Repository
         {
             var query = top.HasValue ? DbSet.OrderByDescending(m => m.Sent).Take(top.Value) : DbSet.OrderBy(m => m.Sent);
 
-            var messages = await query.ToListAsync();
+            var messages = await query.Include(p => p.User).ToListAsync();
 
             if (top.HasValue)
                 messages = messages.OrderBy(m => m.Sent).ToList();

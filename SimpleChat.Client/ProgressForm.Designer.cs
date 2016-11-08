@@ -58,10 +58,8 @@
             this.ControlBox = false;
             this.Controls.Add(this.lblAction);
             this.Controls.Add(this.progressBar);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "ProgressForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.TopMost = true;
             this.ResumeLayout(false);
             this.PerformLayout();
 

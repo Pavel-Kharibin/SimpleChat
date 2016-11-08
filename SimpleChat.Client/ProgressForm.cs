@@ -1,8 +1,6 @@
-﻿using System.Windows.Forms;
-
-namespace SimpleChat.Client
+﻿namespace SimpleChat.Client
 {
-    public partial class ProgressForm : Form
+    public partial class ProgressForm : FormBase
     {
         public ProgressForm()
         {
