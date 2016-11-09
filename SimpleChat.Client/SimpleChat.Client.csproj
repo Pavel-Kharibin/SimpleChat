@@ -157,7 +157,13 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="chat.css">
+    <Content Include="Chat\chat.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Chat\chat.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Chat\jquery.min.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

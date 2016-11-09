@@ -9,6 +9,7 @@ namespace SimpleChat.Core.Contracts
         event EventHandler<OnLogoutCommandEventArgs> OnLogoutCommand;
         event EventHandler<OnNewMessageEventArgs> OnMessage;
         event EventHandler<OnUserStatusChangesEventArgs> OnUserStatusChanged;
+        event EventHandler OnServerStopped;
 
         [OperationContract]
         void DoLogout(string message);
@@ -21,6 +22,9 @@ namespace SimpleChat.Core.Contracts
 
         [OperationContract]
         void UserLoggedOut(User user);
+
+        [OperationContract]
+        void DoServerStopped();
     }
 
 

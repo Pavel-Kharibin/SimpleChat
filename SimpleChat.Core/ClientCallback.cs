@@ -11,10 +11,11 @@ namespace SimpleChat.Core
         public event EventHandler<OnLogoutCommandEventArgs> OnLogoutCommand;
         public event EventHandler<OnNewMessageEventArgs> OnMessage;
         public event EventHandler<OnUserStatusChangesEventArgs> OnUserStatusChanged;
-        
+        public event EventHandler OnServerStopped;
+
         public void DoLogout(string message)
         {
-            OnLogoutCommand?.Invoke(this, new OnLogoutCommandEventArgs {Message = message});
+             OnLogoutCommand?.Invoke(this, new OnLogoutCommandEventArgs { Message = message });
         }
 
         public void SetMessage(ChatMessage message)
@@ -30,6 +31,11 @@ namespace SimpleChat.Core
         public void UserLoggedOut(User user)
         {
             OnUserStatusChanged?.Invoke(this, new OnUserStatusChangesEventArgs { User = user, IsOnline = false });
+        }
+
+        public void DoServerStopped()
+        {
+            OnServerStopped?.Invoke(this, EventArgs.Empty);
         }
     }
 }

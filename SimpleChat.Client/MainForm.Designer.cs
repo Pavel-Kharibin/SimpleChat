@@ -31,6 +31,7 @@
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.Panel panel1;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            this.webBrowser = new System.Windows.Forms.WebBrowser();
             this.panel = new System.Windows.Forms.Panel();
             this.lstUsers = new System.Windows.Forms.ListBox();
             this.txtMessage = new System.Windows.Forms.TextBox();
@@ -43,13 +44,40 @@
             this.mainMenu_Chat_Exit = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.contextMenu_Logout = new System.Windows.Forms.ToolStripMenuItem();
-            this.webBrowser = new System.Windows.Forms.WebBrowser();
             panel1 = new System.Windows.Forms.Panel();
+            panel1.SuspendLayout();
             this.panel.SuspendLayout();
             this.mainMenu.SuspendLayout();
             this.contextMenu.SuspendLayout();
-            panel1.SuspendLayout();
             this.SuspendLayout();
+            // 
+            // panel1
+            // 
+            panel1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            panel1.Controls.Add(this.webBrowser);
+            panel1.Location = new System.Drawing.Point(12, 28);
+            panel1.Name = "panel1";
+            panel1.Size = new System.Drawing.Size(550, 361);
+            panel1.TabIndex = 7;
+            // 
+            // webBrowser
+            // 
+            this.webBrowser.AllowNavigation = false;
+            this.webBrowser.AllowWebBrowserDrop = false;
+            this.webBrowser.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.webBrowser.IsWebBrowserContextMenuEnabled = false;
+            this.webBrowser.Location = new System.Drawing.Point(0, 0);
+            this.webBrowser.Margin = new System.Windows.Forms.Padding(0);
+            this.webBrowser.MinimumSize = new System.Drawing.Size(20, 20);
+            this.webBrowser.Name = "webBrowser";
+            this.webBrowser.ScriptErrorsSuppressed = true;
+            this.webBrowser.Size = new System.Drawing.Size(548, 359);
+            this.webBrowser.TabIndex = 6;
             // 
             // panel
             // 
@@ -122,26 +150,26 @@
             // mainMenu_Chat_Login
             // 
             this.mainMenu_Chat_Login.Name = "mainMenu_Chat_Login";
-            this.mainMenu_Chat_Login.Size = new System.Drawing.Size(152, 22);
+            this.mainMenu_Chat_Login.Size = new System.Drawing.Size(143, 22);
             this.mainMenu_Chat_Login.Text = "&Вход";
             this.mainMenu_Chat_Login.Click += new System.EventHandler(this.mainMenu_Chat_Login_Click);
             // 
             // mainMenu_Chat_Register
             // 
             this.mainMenu_Chat_Register.Name = "mainMenu_Chat_Register";
-            this.mainMenu_Chat_Register.Size = new System.Drawing.Size(152, 22);
+            this.mainMenu_Chat_Register.Size = new System.Drawing.Size(143, 22);
             this.mainMenu_Chat_Register.Text = "&Регистрация";
             this.mainMenu_Chat_Register.Click += new System.EventHandler(this.mainMenu_Chat_Register_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(140, 6);
             // 
             // mainMenu_Chat_Exit
             // 
             this.mainMenu_Chat_Exit.Name = "mainMenu_Chat_Exit";
-            this.mainMenu_Chat_Exit.Size = new System.Drawing.Size(152, 22);
+            this.mainMenu_Chat_Exit.Size = new System.Drawing.Size(143, 22);
             this.mainMenu_Chat_Exit.Text = "В&ыход";
             this.mainMenu_Chat_Exit.Click += new System.EventHandler(this.mainMenu_Chat_Exit_Click);
             // 
@@ -159,31 +187,6 @@
             this.contextMenu_Logout.Text = "Выгнать из чата";
             this.contextMenu_Logout.Click += new System.EventHandler(this.contextMenu_Logout_Click);
             // 
-            // webBrowser
-            // 
-            this.webBrowser.AllowNavigation = false;
-            this.webBrowser.AllowWebBrowserDrop = false;
-            this.webBrowser.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.webBrowser.IsWebBrowserContextMenuEnabled = false;
-            this.webBrowser.Location = new System.Drawing.Point(0, 0);
-            this.webBrowser.Margin = new System.Windows.Forms.Padding(0);
-            this.webBrowser.MinimumSize = new System.Drawing.Size(20, 20);
-            this.webBrowser.Name = "webBrowser";
-            this.webBrowser.Size = new System.Drawing.Size(548, 359);
-            this.webBrowser.TabIndex = 6;
-            // 
-            // panel1
-            // 
-            panel1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            panel1.Controls.Add(this.webBrowser);
-            panel1.Location = new System.Drawing.Point(12, 28);
-            panel1.Name = "panel1";
-            panel1.Size = new System.Drawing.Size(550, 361);
-            panel1.TabIndex = 7;
-            // 
             // MainForm
             // 
             this.AcceptButton = this.btnSend;
@@ -198,13 +201,12 @@
             this.Name = "MainForm";
             this.Text = "SimpleChat";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-            this.Load += new System.EventHandler(this.MainForm_Load);
+            panel1.ResumeLayout(false);
             this.panel.ResumeLayout(false);
             this.panel.PerformLayout();
             this.mainMenu.ResumeLayout(false);
             this.mainMenu.PerformLayout();
             this.contextMenu.ResumeLayout(false);
-            panel1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 

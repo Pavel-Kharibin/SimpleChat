@@ -14,8 +14,11 @@ namespace SimapleChat.Server
             {
                 host.Open();
 
-                Console.WriteLine("Server started.");
+                Console.WriteLine("Сервер запущен.");
+                Console.WriteLine("<enter> для остановки.");
                 Console.ReadLine();
+
+                _server.StopAsync();
             }
         }
     }

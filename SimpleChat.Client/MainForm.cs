@@ -15,26 +15,20 @@ namespace SimpleChat.Client
     public partial class MainForm : Form
     {
         private const string APP_NAME = "SimpleChat";
-
-        private const string CHAT_DOCUMENT = "<!DOCTYPE html><html><head>" +
-                                             "<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>" +
-                                             "</head><body></body></html>";
+        private const int MAX_MESSAGES_COUNT = 10;
+        public const string REQUIRED_FIELD = "Данное поле обязательно к заполнению!";
 
         private readonly List<User> _onlineUsers = new List<User>();
         private readonly IServerService _server;
         private User _user;
+        private readonly WebBrowserWrapper _browserWrapper;
+        private bool _doLogoutOnClose = true;
 
         public MainForm()
         {
             InitializeComponent();
 
-            webBrowser.DocumentCompleted += (sender, args) =>
-            {
-                var path = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "chat.css");
-                var doc = (webBrowser.Document.DomDocument) as IHTMLDocument2;
-                var styleSheet = doc.createStyleSheet("", 0);
-                styleSheet.cssText = File.ReadAllText(path);
-            };
+            _browserWrapper = new WebBrowserWrapper(webBrowser);
 
             var clientCallback = new ClientCallback();
             clientCallback.OnLogoutCommand += (sender, args) =>
@@ -55,6 +49,12 @@ namespace SimpleChat.Client
 
                 UpdateUsersList(args.User, args.IsOnline);
             };
+            clientCallback.OnServerStopped += (sender, args) =>
+            {
+                _doLogoutOnClose = false;
+                ShowMessageBox("Получена комманда остановки сервера.");
+                Close();
+            };
 
             var channelFactory = new DuplexChannelFactory<IServerService>(clientCallback, "SimpleChatServerEndPoint");
             _server = channelFactory.CreateChannel();
@@ -62,16 +62,19 @@ namespace SimpleChat.Client
 
         private void ResetForm()
         {
+            _user = null;
+
             Text = APP_NAME;
 
-            webBrowser.Document.Body.InnerHtml = "";
+            _browserWrapper.SetUserId(0);
+
+            _browserWrapper.Clear();
 
             panel.Enabled = false;
             mainMenu_Chat_Login.Enabled = true;
             mainMenu_Chat_Register.Enabled = true;
             lstUsers.Items.Clear();
 
-            _user = null;
             _onlineUsers.Clear();
         }
 
@@ -81,52 +84,40 @@ namespace SimpleChat.Client
 
             Text = $"{APP_NAME} - {_user.Name}";
 
+            _browserWrapper.SetUserId(_user.Id);
+
             panel.Enabled = true;
             mainMenu_Chat_Login.Enabled = false;
             mainMenu_Chat_Register.Enabled = false;
 
-            var messagesResult = await _server.LoadMessagesAsync(_user.IsAdmin ? (int?) null : 10);
-            foreach (var message in messagesResult.Messages)
+            var messagesResult = await _server.LoadMessagesAsync(_user.IsAdmin ? (int?) null : MAX_MESSAGES_COUNT);
+            if (messagesResult.OperationResult == OperationResult.Success)
             {
-                ShowMessage(message);
-            }
-
-            var onlineUsers = _server.GetOnlineUsers().ToList();
-            onlineUsers.ForEach(u => UpdateUsersList(u, true));
-        }
-
-        private void ShowMessage(ChatMessage message)
-        {
-            var placeholder = webBrowser.Document.CreateElement("section");
-            if (!message.Id.Equals(Guid.Empty))
-            {
-                if (webBrowser.Document != null)
-                {
-                    placeholder.SetAttribute("data-id", message.Id.ToString());
-                    placeholder.InnerHtml =
-                        $"<div class='message'><span class='sender'>{(message.UserId == _user.Id ? "Вы" : message.User?.Name)}</span> <span class='time'>{message.Sent}</span><br/><span class='message-content'>{message.Message}</span></div>";
-                }
+                var messages = messagesResult.Messages.ToList();
+                messages.ForEach(m => ShowMessage(m, false));
+                _browserWrapper.ScrollToBottom();
             }
             else
             {
-                placeholder.InnerHtml += $"<div class='system-message'><span class='time'>{message.Sent}</span> {message.Message}</div>";
+                ShowMessageBox($"Не удалось загрузить список сообщений:\n{messagesResult.Message}", MessageBoxIcon.Error);
             }
 
-            webBrowser.Document.Body.AppendChild(placeholder);
-
-            RemoveOldMessages();
+            var result = await _server.GetOnlineUsersAsync();
+            result.ToList().ForEach(u => UpdateUsersList(u, true));
         }
 
-        private void RemoveOldMessages()
+        private void ShowMessage(ChatMessage message, bool scroll = true, bool animate = true)
         {
-            if (_user.IsAdmin) return;
+            _browserWrapper.ShowMessage(message, scroll, animate);
+
+            if (!_user.IsAdmin) _browserWrapper.RemoveOldMessages(MAX_MESSAGES_COUNT);
         }
 
         private void ShowMessage(string message)
         {
             var chatMessage = new ChatMessage {Message = message};
 
-            ShowMessage(chatMessage);
+            ShowMessage(chatMessage, true, false);
         }
 
         private void UpdateUsersList(User user, bool isLogged)
@@ -152,11 +143,6 @@ namespace SimpleChat.Client
             MessageBox.Show(this, message, APP_NAME, MessageBoxButtons.OK, icon);
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-            webBrowser.DocumentText = CHAT_DOCUMENT;
-        }
-
         private void mainMenu_Chat_Login_Click(object sender, EventArgs e)
         {
             var loginForm = new LoginForm();
@@ -168,7 +154,7 @@ namespace SimpleChat.Client
                 var progress = new ProgressForm("Выполняется вход в чат...");
                 progress.ShowCenterParent(loginForm);
 
-                var result = await _server.LoginAsync(loginForm.Login, loginForm.Password);
+                var result = await _server.LoginAsync(args.Login, args.Password);
 
                 progress.Close();
 
@@ -240,7 +226,7 @@ namespace SimpleChat.Client
         private async void btnSend_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtMessage.Text)) return;
-
+            
             var chatMessage = new ChatMessage
             {
                 Id = Guid.NewGuid(),
@@ -249,26 +235,26 @@ namespace SimpleChat.Client
                 UserId = _user.Id
             };
 
-            ShowMessage(chatMessage);
+            txtMessage.Text = "";
+
+            ShowMessage(chatMessage, true, false);
 
             var result = await _server.SendMessageAsync(chatMessage);
 
-            if (result.OperationResult == OperationResult.Success)
+            if (result.OperationResult != OperationResult.Success)
             {
-                txtMessage.Text = "";
-            }
-            else
-            {
-                ShowMessageBox(result.Message, MessageBoxIcon.Warning);
+                ShowMessageBox($"Не удалось отправить сообщение.\n{result.Message}", MessageBoxIcon.Warning);
             }
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            if (!_doLogoutOnClose) return;
+
             try
             {
                 if (_user != null)
-                    _server.Logout();
+                    _server.LogoutAsync();
             }
             catch (Exception)
             {
@@ -288,6 +274,77 @@ namespace SimpleChat.Client
             if (user.Id == _user.Id) return;
             contextMenu.Show(lstUsers, e.Location);
             lstUsers.SelectedIndex = selectedIdx;
+        }
+    }
+
+    internal class WebBrowserWrapper
+    {
+        private const string CHAT_DOCUMENT = "<!DOCTYPE html><html><head>" +
+                                             "<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>" +
+                                             "</head><body></body></html>";
+
+        private readonly WebBrowser _webBrowser;
+
+        public WebBrowserWrapper(WebBrowser webBrowser)
+        {
+            _webBrowser = webBrowser;
+
+            _webBrowser.DocumentCompleted += (sender, args) =>
+            {
+                var currentPath = Path.GetDirectoryName(Application.ExecutablePath);
+
+                var doc = (_webBrowser.Document?.DomDocument) as IHTMLDocument2;
+                var styleSheet = doc?.createStyleSheet("", 0);
+                styleSheet.cssText = File.ReadAllText(Path.Combine(currentPath, "chat/chat.css"));
+
+                var head = _webBrowser.Document?.GetElementsByTagName("head")[0];
+
+                var jqscript = _webBrowser.Document?.CreateElement("script");
+                jqscript.SetAttribute("text", File.ReadAllText(Path.Combine(currentPath, "chat/jquery.min.js")));
+                head.AppendChild(jqscript);
+
+                var script = _webBrowser.Document?.CreateElement("script");
+                script.SetAttribute("text", File.ReadAllText(Path.Combine(currentPath, "chat/chat.js")));
+                head.AppendChild(script);
+            };
+
+            _webBrowser.DocumentText = CHAT_DOCUMENT;
+        }
+
+        public void Clear()
+        {
+            if (_webBrowser.Document?.Body != null)
+                _webBrowser.Document.Body.InnerHtml = "";
+        }
+
+        public void ScrollToBottom()
+        {
+            _webBrowser.Document?.InvokeScript("ScrollToBottom");
+        }
+
+        public void ShowMessage(ChatMessage message, bool scroll, bool animate)
+        {
+            _webBrowser.Document?.InvokeScript("ShowMessage",
+                new object[]
+                {
+                    message.Id.Equals(Guid.Empty) ? "" : message.Id.ToString(),
+                    message.UserId,
+                    message.User?.Name,
+                    message.Sent.ToString("dd.MM.yyyy hh:mm:ss"),
+                    message.Message,
+                    scroll,
+                    animate
+                });
+        }
+
+        public void RemoveOldMessages(int maxMessages)
+        {
+            _webBrowser.Document?.InvokeScript("RemoveOldMessages", new object[] { maxMessages });
+        }
+
+        public void SetUserId(int id)
+        {
+            _webBrowser.Document?.InvokeScript("SetUserId", new object[] {id});
         }
     }
 }

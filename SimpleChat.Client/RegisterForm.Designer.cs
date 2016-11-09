@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.Windows.Forms.Label label3;
             System.Windows.Forms.Label label2;
             System.Windows.Forms.Label label1;
@@ -37,11 +38,13 @@
             this.txtPassword = new System.Windows.Forms.TextBox();
             this.txtUserName = new System.Windows.Forms.TextBox();
             this.btnRegister = new System.Windows.Forms.Button();
+            this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
             label3 = new System.Windows.Forms.Label();
             label2 = new System.Windows.Forms.Label();
             label1 = new System.Windows.Forms.Label();
             groupBox1 = new System.Windows.Forms.GroupBox();
             groupBox1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.SuspendLayout();
             // 
             // label3
@@ -83,51 +86,58 @@
             groupBox1.Controls.Add(this.txtPassword);
             groupBox1.Controls.Add(this.txtUserName);
             groupBox1.Controls.Add(this.btnRegister);
-            groupBox1.Location = new System.Drawing.Point(13, 13);
+            groupBox1.Location = new System.Drawing.Point(12, 12);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new System.Drawing.Size(229, 140);
+            groupBox1.Size = new System.Drawing.Size(230, 141);
             groupBox1.TabIndex = 6;
             groupBox1.TabStop = false;
             // 
             // txtLogin
             // 
             this.txtLogin.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.txtLogin.Location = new System.Drawing.Point(53, 48);
+            this.txtLogin.Location = new System.Drawing.Point(50, 48);
             this.txtLogin.MaxLength = 10;
             this.txtLogin.Name = "txtLogin";
-            this.txtLogin.Size = new System.Drawing.Size(170, 22);
+            this.txtLogin.Size = new System.Drawing.Size(160, 22);
             this.txtLogin.TabIndex = 2;
+            this.txtLogin.Validating += new System.ComponentModel.CancelEventHandler(this.txtLogin_Validating);
             // 
             // txtPassword
             // 
             this.txtPassword.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.txtPassword.Location = new System.Drawing.Point(53, 76);
+            this.txtPassword.Location = new System.Drawing.Point(50, 76);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.PasswordChar = '*';
-            this.txtPassword.Size = new System.Drawing.Size(170, 22);
+            this.txtPassword.Size = new System.Drawing.Size(160, 22);
             this.txtPassword.TabIndex = 3;
+            this.txtPassword.Validating += new System.ComponentModel.CancelEventHandler(this.txtPassword_Validating);
             // 
             // txtUserName
             // 
             this.txtUserName.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.txtUserName.Location = new System.Drawing.Point(53, 19);
+            this.txtUserName.Location = new System.Drawing.Point(50, 19);
             this.txtUserName.MaxLength = 15;
             this.txtUserName.Name = "txtUserName";
-            this.txtUserName.Size = new System.Drawing.Size(170, 22);
+            this.txtUserName.Size = new System.Drawing.Size(160, 22);
             this.txtUserName.TabIndex = 0;
+            this.txtUserName.Validating += new System.ComponentModel.CancelEventHandler(this.txtUserName_Validating);
             // 
             // btnRegister
             // 
             this.btnRegister.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.btnRegister.AutoSize = true;
             this.btnRegister.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnRegister.Location = new System.Drawing.Point(73, 111);
+            this.btnRegister.Location = new System.Drawing.Point(74, 112);
             this.btnRegister.Name = "btnRegister";
             this.btnRegister.Size = new System.Drawing.Size(82, 23);
             this.btnRegister.TabIndex = 0;
             this.btnRegister.Text = "Регистрация";
             this.btnRegister.UseVisualStyleBackColor = true;
             this.btnRegister.Click += new System.EventHandler(this.btnRegister_Click);
+            // 
+            // errorProvider
+            // 
+            this.errorProvider.ContainerControl = this;
             // 
             // RegisterForm
             // 
@@ -146,6 +156,7 @@
             this.Text = "Регистрация";
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -155,5 +166,6 @@
         private System.Windows.Forms.TextBox txtPassword;
         private System.Windows.Forms.TextBox txtUserName;
         private System.Windows.Forms.Button btnRegister;
+        private System.Windows.Forms.ErrorProvider errorProvider;
     }
 }

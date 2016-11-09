@@ -13,7 +13,7 @@ namespace SimpleChat.Core.Contracts
         Task<LoginOperationResult> LoginAsync(string login, string password);
 
         [OperationContract]
-        void Logout();
+        void LogoutAsync();
 
         [OperationContract]
         void LogoutUserAsync(int userId);
@@ -28,6 +28,8 @@ namespace SimpleChat.Core.Contracts
         Task<SendMessageOperationResult> SendMessageAsync(ChatMessage message, bool save = true);
 
         [OperationContract]
-        IEnumerable<User> GetOnlineUsers();
+        Task<IEnumerable<User>> GetOnlineUsersAsync();
+
+        void StopAsync();
     }
 }

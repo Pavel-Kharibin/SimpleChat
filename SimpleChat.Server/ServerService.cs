@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
 using System.Threading.Tasks;
+using SimpleChat.Core.Bases;
 using SimpleChat.Core.Contracts;
 using SimpleChat.Core.Enums;
 using SimpleChat.Core.Models;
@@ -16,55 +17,52 @@ namespace SimapleChat.Server
         IncludeExceptionDetailInFaults = true)]
     public class ServerService : IServerService
     {
+        private readonly UsersRepository _usersRepository = new UsersRepository();
         private readonly ChatMessagesRepository _chatMessagesRepository = new ChatMessagesRepository();
 
         private readonly ConcurrentDictionary<string, ClientConnection> _clients =
             new ConcurrentDictionary<string, ClientConnection>();
 
-        private readonly UsersRepository _usersRepository = new UsersRepository();
-
         public async Task<LoginOperationResult> LoginAsync(string login, string password)
         {
             var clientCallback = OperationContext.Current.GetCallbackChannel<IClientCallback>();
 
-            if (_clients.Keys.Any(k => string.Equals(k, login, StringComparison.InvariantCultureIgnoreCase)))
-            {
-                var clientInfo = _clients.First(c => string.Equals(c.Key, login, StringComparison.InvariantCultureIgnoreCase));
+            CheckAlreadyLoggedInAsync(login);
 
-                ClientConnection connectionToRemove;
-                if (_clients.TryRemove(login, out connectionToRemove))
-                {
-                    clientInfo.Value.Callback.DoLogout("Ваша учетная запись использована на другом компьютере!");
-                }
+            User user;
+            try
+            {
+                user = await _usersRepository.LoginAsync(login, password);
+            }
+            catch (Exception ex)
+            {
+                return ServerOperationResult.Failure<LoginOperationResult>(ex.Message);
             }
 
-            var user = await _usersRepository.LoginAsync(login, password);
-
-            if (user == null)
-                return new LoginOperationResult
-                {
-                    OperationResult = OperationResult.Failure,
-                    Message = "Не верный логин или пароль."
-                };
-
-            return Login(user, clientCallback);
+            return user == null
+                ? ServerOperationResult.Failure<LoginOperationResult>("Не верный логин или пароль.")
+                : Login(user, clientCallback);
         }
 
-        public void Logout()
+        public async void LogoutAsync()
         {
             var callback = OperationContext.Current.GetCallbackChannel<IClientCallback>();
             if (_clients.All(c => c.Value.Callback != callback)) return;
 
-            var clientInfo = _clients.First(c => c.Value.Callback == callback);
-
-            ClientConnection clientConnection;
-            if (_clients.TryRemove(clientInfo.Value.User.Login, out clientConnection))
+            var taskFaktory = new TaskFactory();
+            await taskFaktory.StartNew(() =>
             {
-                foreach (var conn in _clients.Where(c => c.Value != clientConnection))
+                var clientInfo = _clients.First(c => c.Value.Callback == callback);
+
+                ClientConnection clientConnection;
+                if (_clients.TryRemove(clientInfo.Value.User.Login, out clientConnection))
                 {
-                    conn.Value.Callback.UserLoggedOut(clientConnection.User);
+                    foreach (var conn in _clients.Where(c => c.Value != clientConnection))
+                    {
+                        conn.Value.Callback.UserLoggedOut(clientConnection.User);
+                    }
                 }
-            }
+            });
         }
 
         public async void LogoutUserAsync(int userId)
@@ -76,14 +74,13 @@ namespace SimapleChat.Server
             {
                 if (_clients.All(c => c.Value.User.Id != userId)) return;
 
-                
                 var clientInfo = _clients.First(c => c.Value.User.Id == userId);
 
                 ClientConnection clientConnection;
                 if (_clients.TryRemove(clientInfo.Value.User.Login, out clientConnection))
                 {
                     foreach (
-                        var conn in _clients.Where(c => c.Value != clientConnection && c.Value.Callback != callback))//  
+                        var conn in _clients.Where(c => c.Value != clientConnection && c.Value.Callback != callback))
                     {
                         conn.Value.Callback.UserLoggedOut(clientConnection.User);
                     }
@@ -97,24 +94,36 @@ namespace SimapleChat.Server
         {
             var clientCallback = OperationContext.Current.GetCallbackChannel<IClientCallback>();
 
-            var loginExists = await _usersRepository.CheckLoginExists(login);
-            if (loginExists)
+            User user;
+            try
             {
-                return new LoginOperationResult
+                var loginExists = await _usersRepository.CheckLoginExists(login);
+                if (loginExists)
                 {
-                    OperationResult = OperationResult.Failure,
-                    Message = $"Логин {login} уже зарегистрирован."
-                };
-            }
+                    return ServerOperationResult.Failure<LoginOperationResult>($"Логин {login} уже зарегистрирован.");
+                }
 
-            var user = await _usersRepository.RegisterAsync(userName, login, password);
+                user = await _usersRepository.RegisterAsync(userName, login, password);
+            }
+            catch (Exception ex)
+            {
+                return ServerOperationResult.Failure<LoginOperationResult>(ex.Message);
+            }
 
             return Login(user, clientCallback);
         }
 
         public async Task<LoadMessagesOperationResult> LoadMessagesAsync(int? top = null)
         {
-            var messages = await _chatMessagesRepository.GetMessagesAsync(top);
+            IEnumerable<ChatMessage> messages;
+            try
+            {
+                messages = await _chatMessagesRepository.GetMessagesAsync(top);
+            }
+            catch (Exception ex)
+            {
+                return ServerOperationResult.Failure<LoadMessagesOperationResult>(ex.Message);
+            }
 
             return new LoadMessagesOperationResult
             {
@@ -126,7 +135,14 @@ namespace SimapleChat.Server
         {
             if (save)
             {
-                await _chatMessagesRepository.AddMessageAsync(message);
+                try
+                {
+                    await _chatMessagesRepository.AddMessageAsync(message);
+                }
+                catch (Exception ex)
+                {
+                    return ServerOperationResult.Failure<SendMessageOperationResult>(ex.Message);
+                }
             }
 
             foreach (var clientInfo in _clients.Where(c => c.Value.User.Id != message.UserId))
@@ -137,11 +153,29 @@ namespace SimapleChat.Server
             return new SendMessageOperationResult();
         }
 
-        public IEnumerable<User> GetOnlineUsers()
+        public async Task<IEnumerable<User>> GetOnlineUsersAsync()
         {
-            var users = _clients.Select(c => c.Value.User).ToList();
+            var users = Enumerable.Empty<User>();
+
+            var taskFactory = new TaskFactory();
+            await taskFactory.StartNew(() =>
+            {
+                users = _clients.Select(c => c.Value.User).ToList();
+            });
 
             return users;
+        }
+
+        public async void StopAsync()
+        {
+            var taskFactory = new TaskFactory();
+            await taskFactory.StartNew(() =>
+            {
+                foreach (var client in _clients)
+                {
+                    client.Value.Callback.DoServerStopped();
+                }
+            });
         }
 
         private LoginOperationResult Login(User user, IClientCallback clientCallback)
@@ -170,6 +204,22 @@ namespace SimapleChat.Server
                 OperationResult = OperationResult.Failure,
                 Message = "Не удалось зврегистрировать клиентское соединение."
             };
+        }
+
+        private async void CheckAlreadyLoggedInAsync(string login)
+        {
+            var taskFactory = new TaskFactory();
+            await taskFactory.StartNew(() =>
+            {
+                if (_clients.Keys.Any(k => string.Equals(k, login, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    ClientConnection connectionToRemove;
+                    if (_clients.TryRemove(login, out connectionToRemove))
+                    {
+                        connectionToRemove.Callback.DoLogout("Ваша учетная запись использована на другом компьютере!");
+                    }
+                }
+            });
         }
     }
 }
