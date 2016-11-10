@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.ServiceModel;
+using System.Web;
 using System.Windows.Forms;
 using mshtml;
 using SimpleChat.Core;
@@ -329,9 +330,9 @@ namespace SimpleChat.Client
                 {
                     message.Id.Equals(Guid.Empty) ? "" : message.Id.ToString(),
                     message.UserId,
-                    message.User?.Name,
+                    HttpUtility.HtmlEncode(message.User?.Name ?? string.Empty),
                     message.Sent.ToString("dd.MM.yyyy hh:mm:ss"),
-                    message.Message,
+                    HttpUtility.HtmlEncode(message.Message ?? string.Empty),
                     scroll,
                     animate
                 });
